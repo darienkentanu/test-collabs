@@ -1,66 +1,20 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
-	"github.com/jinzhu/gorm"
+	"github.com/darienkentanu/API-CRUD-User-Using-Database/model"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/labstack/echo"
 )
 
 type M map[string]interface{}
 
-var DB *gorm.DB
-
-func init() {
-	InitDB()
-	InitialMigration()
-}
-
-type Config struct {
-	DB_Username string
-	DB_Password string
-	DB_Port     string
-	DB_Host     string
-	DB_Name     string
-}
-
-func InitDB() {
-	config := Config{
-		DB_Username: "root",
-		DB_Password: "password",
-		DB_Port:     "3306",
-		DB_Host:     "localhost",
-		DB_Name:     "crud_go",
-	}
-	connStr := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local",
-		config.DB_Username, config.DB_Password,
-		config.DB_Host, config.DB_Port, config.DB_Name,
-	)
-	var err error
-	DB, err = gorm.Open("mysql", connStr)
-	if err != nil {
-		panic(err)
-	}
-}
-
-type User struct {
-	gorm.Model
-	Name     string `json:"name" form:"name"`
-	Email    string `json:"email" form:"email"`
-	Password string `json:"password" form:"password"`
-}
-
-func InitialMigration() {
-	DB.AutoMigrate(&User{})
-}
-
 // get all users
 func GetUsersController(c echo.Context) error {
-	var users []User
-	if err := DB.Find(&users).Error; err != nil {
+	var users []model.User
+	if err := model.DB.Find(&users).Error; err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	return c.JSON(http.StatusOK, M{"message": "success get all users",
@@ -74,9 +28,9 @@ func GetUserController(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusBadRequest, "invalid id")
 	}
-	var user User
-	if err := DB.First(&user, id).Error; err != nil {
-		return c.String(http.StatusInternalServerError, "internal server error")
+	var user model.User
+	if err := model.DB.First(&user, id).Error; err != nil {
+		return c.String(http.StatusInternalServerError, "id not found")
 	}
 	if user.ID == 0 {
 		return c.String(http.StatusNotFound, "id not found")
@@ -86,11 +40,11 @@ func GetUserController(c echo.Context) error {
 
 // create new user
 func CreateUserController(c echo.Context) error {
-	user := User{}
+	user := model.User{}
 	if err := c.Bind(&user); err != nil {
-		return c.String(http.StatusInternalServerError, "internal server error")
+		return c.String(http.StatusInternalServerError, "failed create new user")
 	}
-	if err := DB.Save(&user).Error; err != nil {
+	if err := model.DB.Save(&user).Error; err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	return c.JSON(http.StatusOK, M{
@@ -106,14 +60,14 @@ func DeleteUserController(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusBadRequest, "invalid id")
 	}
-	var user User
-	if err := DB.First(&user, id).Error; err != nil {
-		return c.String(http.StatusInternalServerError, "internal server error")
+	var user model.User
+	if err := model.DB.First(&user, id).Error; err != nil {
+		return c.String(http.StatusInternalServerError, "id not found")
 	}
 	if user.ID == 0 {
 		return c.String(http.StatusNotFound, "id not found")
 	}
-	if err := DB.Delete(&user).Error; err != nil {
+	if err := model.DB.Delete(&user).Error; err != nil {
 		return c.String(http.StatusInternalServerError, "internal server error")
 	}
 	return c.JSON(http.StatusOK, user)
@@ -125,8 +79,8 @@ func UpdateUserController(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, M{"message": "please input a valid id"})
 	}
-	var user User
-	if err := DB.First(&user, id).Error; err != nil {
+	var user model.User
+	if err := model.DB.First(&user, id).Error; err != nil {
 		return c.String(http.StatusInternalServerError, "internal server error")
 	}
 	if user.ID == 0 {
@@ -135,7 +89,7 @@ func UpdateUserController(c echo.Context) error {
 	if err := c.Bind(&user); err != nil {
 		return c.String(http.StatusInternalServerError, "internal server error")
 	}
-	if err := DB.Save(&user).Error; err != nil {
+	if err := model.DB.Save(&user).Error; err != nil {
 		return c.String(http.StatusInternalServerError, "internal server error")
 	}
 	return c.JSON(http.StatusOK, user)
@@ -143,6 +97,7 @@ func UpdateUserController(c echo.Context) error {
 
 func main() {
 	// create a new echo instance
+	model.InitDB()
 	e := echo.New()
 	// Route / to handler function
 	e.GET("/users", GetUsersController)
