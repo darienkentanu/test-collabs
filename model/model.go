@@ -19,7 +19,7 @@ type Config struct {
 func InitDB() {
 	config := Config{
 		DB_Username: "root",
-		DB_Password: "root1234",
+		DB_Password: "password",
 		DB_Port:     "3306",
 		DB_Host:     "localhost",
 		DB_Name:     "crud_go",
@@ -40,6 +40,7 @@ type User struct {
 	gorm.Model
 	Name     string `json:"name" form:"name"`
 	Alamat   string `json:"alamat" form:alamat"`
+	Dob      string `json:"dob" form:"dob"`
 	Email    string `json:"email" form:"email"`
 	Password string `json:"password" form:"password"`
 }
