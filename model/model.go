@@ -39,6 +39,7 @@ func InitDB() {
 type User struct {
 	gorm.Model
 	Name     string `json:"name" form:"name"`
+	Alamat   string `json:"alamat" form:alamat"`
 	Email    string `json:"email" form:"email"`
 	Password string `json:"password" form:"password"`
 }
